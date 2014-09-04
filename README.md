@@ -1,4 +1,4 @@
-php-simple-ws-library
+Simple PHP WebSocket Library
 =====================
 
 Simple PHP Websoket library with examples:
