@@ -19,14 +19,14 @@ function receive_http_head($stream) {
 
 function fetch_http_headers($receved_header) {
     $headers = array();
-	$lines = preg_split("/\r\n/", $receved_header);
-	foreach($lines as $line)
-	{
-		$line = chop($line);
-		if(preg_match('/\A(\S+): ?(.*)\z/', $line, $matches))
-		{
-			$headers[$matches[1]] = $matches[2];
-		}
-	}
+    $lines = preg_split("/\r\n/", $receved_header);
+    foreach($lines as $line)
+    {
+        $line = chop($line);
+        if(preg_match('/\A(\S+): ?(.*)\z/', $line, $matches))
+        {
+            $headers[$matches[1]] = $matches[2];
+        }
+    }
     return $headers;
 }

@@ -24,10 +24,10 @@ $require_auth = 0;
 // start endless loop, so that our script doesn't stop
 $cnt = 0;
 while (true) {
-	// manage multipal connections
-	$changed = $clients;
-	// Make a tick every second and returns the socket resources in $changed array
-	stream_select($changed, $null, $null, 1, 0);
+    // manage multipal connections
+    $changed = $clients;
+    // Make a tick every second and returns the socket resources in $changed array
+    stream_select($changed, $null, $null, 1, 0);
     
     if ($cnt++ > 999999) $cnt = 0;
     if ($status_display) {
@@ -36,9 +36,9 @@ while (true) {
         if ($cnt % 500 == 0) echo ' We have '.(count($clients) - 1)." client(s)\n";
     }
     
-	//check for new socket
-	if ($changed && in_array($stream, $changed)) {
-		$stream_new = stream_socket_accept($stream); //accpet new socket
+    //check for new socket
+    if ($changed && in_array($stream, $changed)) {
+        $stream_new = stream_socket_accept($stream); //accpet new socket
         stream_set_blocking ($stream_new, true); // block the connection until SSL is done.
         $i = array_search($stream, $changed);
         
@@ -47,24 +47,25 @@ while (true) {
         }
         elseif (is_resource($stream_new)) 
         {
-            $clients[] = $stream_new; //add socket to client array
             
             if(!perform_handshaking($stream_new, $host, $port)) {//perform websocket handshake
                 unset($changed[$i]);
+                fclose($stream_new);
                 continue;
             }
+            $clients[] = $stream_new; //add socket to client array
             stream_set_blocking ($stream_new, false);
             $ip = stream_socket_get_name( $stream_new, true);
             $response = mask(json_encode(array('type'=>'system', 'message'=>$ip.' connected'))); //prepare json data
             send_message($response); //notify all receivers about new connection
-		}
-		//make room for new socket
+        }
+        //make room for new socket
         unset($changed[$i]);
-	}
-	
-	//loop through all connected sockets
-	foreach ($changed as $i => $changed_stream) {	
-		
+    }
+    
+    //loop through all connected sockets
+    foreach ($changed as $i => $changed_stream) {   
+        
         if(!is_resource($changed_stream)) {
             drop_client($changed_stream);
             continue;
@@ -72,8 +73,8 @@ while (true) {
         
         $found_key = array_search($changed_stream, $clients);
         $received_text = '';
-		//check for any incomming data frames
-		while(($decoded_frame = receive_ws_frame($changed_stream, true, $raw, $is_final)) && ($received_text .= $decoded_frame) && !$is_final);
+        //check for any incomming data frames
+        while(($decoded_frame = receive_ws_frame($changed_stream, true, $raw, $is_final)) && ($received_text .= $decoded_frame) && !$is_final);
         
         $tst_msg = json_decode($received_text, true);
         if (is_null($tst_msg)) {
@@ -96,11 +97,11 @@ while (true) {
         //prepare data to be sent to client
         $tst_msg['type'] = 'usermsg';
         send_message(mask(json_encode($tst_msg))); //send data
-		
-		if (!$raw) { // check disconnected client
-			drop_client($changed_stream);
-		}
-	}
+        
+        if (!$raw) { // check disconnected client
+            drop_client($changed_stream);
+        }
+    }
 }
 
 function perform_auth($msg_arr, $stream) {
@@ -124,10 +125,10 @@ function perform_auth($msg_arr, $stream) {
 
 function drop_client($changed_stream, $no_notify = false)
 {
-	global $clients;
-	global $receivers;
-	global $senders;
-	global $main_stream;
+    global $clients;
+    global $receivers;
+    global $senders;
+    global $main_stream;
     // remove client for $clients array
     $found_key = array_search($changed_stream, $clients);
     $ip = stream_socket_get_name($changed_stream, true);
@@ -149,7 +150,7 @@ function send_message($msg, $stream = null)
 {
     global $receivers;
     global $require_auth;
-	if ($stream) 
+    if ($stream) 
     {
         $clients = array($stream);
     } 
@@ -158,12 +159,12 @@ function send_message($msg, $stream = null)
         global $clients;
     }
     
-	foreach($clients as $i => $changed_stream)
-	{
+    foreach($clients as $i => $changed_stream)
+    {
         if (!$stream && $require_auth && empty($receivers[$i])) continue;
-		stream_write ($changed_stream, $msg);
-	}
-	return true;
+        stream_write ($changed_stream, $msg);
+    }
+    return true;
 }
 
 function no_sec_key_response() {

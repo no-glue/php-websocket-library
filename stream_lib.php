@@ -23,22 +23,22 @@ function setupTcpStreamServer($bindTo, $pemfile, $pem_passphrase = '') {
         createCert($pemfile, $pem_passphrase, $host);
     }
     
-	#create a stream context for our SSL settings
-	$context = stream_context_create();
+    #create a stream context for our SSL settings
+    $context = stream_context_create();
 
-	#Setup the SSL Options
-	stream_context_set_option($context, 'ssl', 'local_cert', $pemfile);		// Our SSL Cert in PEM format
-	stream_context_set_option($context, 'ssl', 'passphrase', $pem_passphrase);	// Private key Password
+    #Setup the SSL Options
+    stream_context_set_option($context, 'ssl', 'local_cert', $pemfile);     // Our SSL Cert in PEM format
+    stream_context_set_option($context, 'ssl', 'passphrase', $pem_passphrase);  // Private key Password
     
     // В этом нет необходимости, нужно только для клиентов
     // stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
     // stream_context_set_option($context, 'ssl', 'verify_peer', false);
 
-	#create a stream socket on IP:Port
-	$socket = stream_socket_server("tcp://{$bindTo}", $errno, $errstr, STREAM_SERVER_BIND|STREAM_SERVER_LISTEN, $context);
-	stream_socket_enable_crypto($socket, false);
+    #create a stream socket on IP:Port
+    $socket = stream_socket_server("tcp://{$bindTo}", $errno, $errstr, STREAM_SERVER_BIND|STREAM_SERVER_LISTEN, $context);
+    stream_socket_enable_crypto($socket, false);
 
-	return $socket;
+    return $socket;
 }
 
 // Создаем самоподписанный сертификат со случайным серийным номером

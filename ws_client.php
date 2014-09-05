@@ -23,29 +23,15 @@ $mess = mask(json_encode(array('type' => 'auth', 'name' => 'alpha', 'color' => '
 stream_write($stream, $mess);
 
 usleep(10000);
-stream_set_blocking ($stream, false);
-stream_get_contents ($stream, 1024);
+$meta = stream_get_meta_data ($stream);
+if ($meta['unread_bytes']) stream_read($stream, $meta['unread_bytes']);
 $mess = mask(json_encode(array('type' => 'usermsg', 'name' => 'alpha', 'color' => '0FC', 'message' => "Hello!")));
 stream_write($stream, $mess);
 
 usleep(10000);
+$meta = stream_get_meta_data ($stream);
+if ($meta['unread_bytes']) stream_read($stream, $meta['unread_bytes']);
 $mess = mask(json_encode(array('type' => 'bye')));
 stream_write($stream, $mess);
-stream_get_contents ($stream, 1024);
 
-
-//Encode message for transfer to client without masking.
-function mask_without_mask($text)
-{
-	$b1 = 129;// first byte indicates FIN, Text-Frame (10000001):
-	$length = strlen($text);
-	
-	if($length <= 125)
-		$header = pack('CC', $b1, $length);
-	elseif($length > 125 && $length < 65536)
-		$header = pack('CCn', $b1, 126, $length);
-	elseif($length >= 65536)
-		$header = pack('CCNN', $b1, 127, $length);
-	return $header.$text;
-}
 

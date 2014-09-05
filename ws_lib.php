@@ -29,12 +29,12 @@ function receive_ws_frame($stream, $decode = true, &$raw_frame = '', &$is_fin = 
     // ѕолучаем дополнительные байты длины, если они должны быть ( $length > 125 )
     // » замен€ем значение $length
     $lenstr = '';
-	if($length == 126) 
+    if($length == 126) 
     {
         $lenstr = stream_read($stream, 2, $timeout);
         extract(unpack('nlength', $lenstr), EXTR_OVERWRITE);
-	}
-	elseif($length == 127) 
+    }
+    elseif($length == 127) 
     {
         $lenstr = stream_read($stream, 8, $timeout);;
         extract(unpack('Nlength_big/Nlength', $lenstr), EXTR_OVERWRITE);
@@ -42,7 +42,7 @@ function receive_ws_frame($stream, $decode = true, &$raw_frame = '', &$is_fin = 
         if ($length_big && PHP_INT_MAX > 2147483647) {
             $length = $length_big << 32 + $length;
         }
-	}
+    }
     
     $masks = '';
     if ($is_mask) 
@@ -74,26 +74,26 @@ function transmit_ws_frame($stream, $data, $encode = true, $type = 'text', $mask
 
 //Unmask incoming framed text message
 function unmask($text) {
-	$length  = ord($text[1]) & 127;
+    $length  = ord($text[1]) & 127;
     $is_mask = ord($text[1]) & 128;
     $mask = '\x00\x00\x00\x00';
-	if($length == 126) {
-		if ($is_mask) $masks = substr($text, 4, 4);
-		$data = substr($text, $is_mask ? 8 : 4);
-	}
-	elseif($length == 127) {
-		if ($is_mask) $masks = substr($text, 10, 4);
-		$data  = substr($text, $is_mask ? 14 : 10);
-	}
-	else {
-		if ($is_mask) $masks = substr($text, 2, 4);
-		$data  = substr($text, $is_mask ? 6 : 2);
-	}
-	$text = "";
-	for ($i = 0; $i < strlen($data); ++$i) {
-		$text .= $data[$i] ^ $masks[$i%4];
-	}
-	return $text;
+    if($length == 126) {
+        if ($is_mask) $masks = substr($text, 4, 4);
+        $data = substr($text, $is_mask ? 8 : 4);
+    }
+    elseif($length == 127) {
+        if ($is_mask) $masks = substr($text, 10, 4);
+        $data  = substr($text, $is_mask ? 14 : 10);
+    }
+    else {
+        if ($is_mask) $masks = substr($text, 2, 4);
+        $data  = substr($text, $is_mask ? 6 : 2);
+    }
+    $text = "";
+    for ($i = 0; $i < strlen($data); ++$i) {
+        $text .= $data[$i] ^ $masks[$i%4];
+    }
+    return $text;
 }
 
 // Encode message for transfer to client.
@@ -107,11 +107,11 @@ function mask($payload, $type = 'text', $masked = false)
     $payloadLength = strlen($payload);
     
     switch($type)
-    {		
+    {       
         case 'text':
             // first byte indicates FIN, Text-Frame (10000001):
-            $frameHead[0] = 129;				
-        break;			
+            $frameHead[0] = 129;                
+        break;          
     
         case 'close':
             // first byte indicates FIN, Close Frame(10001000):
@@ -171,14 +171,14 @@ function mask($payload, $type = 'text', $masked = false)
             $mask[$i] = chr(rand(0, 255));
         }
         
-        $frameHead = array_merge($frameHead, $mask);			
-    }						
+        $frameHead = array_merge($frameHead, $mask);            
+    }                       
     $frame = implode('', $frameHead);
 
     // append payload to frame:
-    $framePayload = array();	
+    $framePayload = array();    
     for($i = 0; $i < $payloadLength; $i++)
-    {		
+    {       
         $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
     }
 
@@ -190,26 +190,24 @@ function mask($payload, $type = 'text', $masked = false)
 function perform_handshaking($stream, $host, $port)
 {
     $meta    = stream_get_meta_data($stream);    
-	$headers = fetch_http_headers(receive_http_head($stream));
-	
+    $headers = fetch_http_headers(receive_http_head($stream));
+    
     if (empty($headers['Sec-WebSocket-Key'])) {
         if (function_exists('no_sec_key_response')) {
             stream_write($stream, no_sec_key_response($stream, $host, $port));
             usleep(100);
         }
-        drop_client($stream, true);
         return false;
     }
     
-	$secKey = $headers['Sec-WebSocket-Key'];
-	$secAccept = base64_encode(pack('H*', sha1($secKey . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
-	//hand shaking header
-	$upgrade  = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
-	"Upgrade: websocket\r\n" .
-	"Connection: Upgrade\r\n" .
-	"WebSocket-Origin: $host\r\n" .
-	"WebSocket-Location: ws".(strpos($meta["stream_type"], "ssl") !== false ? 's' : '')."://$host:$port/retranslator\r\n".
-	"Sec-WebSocket-Accept: $secAccept\r\n\r\n";
-    $written = fwrite($stream, $upgrade, strlen($upgrade));
-	return $written;
+    $secKey = $headers['Sec-WebSocket-Key'];
+    $secAccept = base64_encode(pack('H*', sha1($secKey . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+    //hand shaking header
+    $upgrade  = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
+    "Upgrade: websocket\r\n" .
+    "Connection: Upgrade\r\n" .
+    "WebSocket-Origin: $host\r\n" .
+    "WebSocket-Location: ws".(strpos($meta["stream_type"], "ssl") !== false ? 's' : '')."://$host:$port/retranslator\r\n".
+    "Sec-WebSocket-Accept: $secAccept\r\n\r\n";
+    return stream_write($stream, $upgrade);
 }
