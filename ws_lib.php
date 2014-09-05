@@ -26,8 +26,8 @@ function receive_ws_frame($stream, $decode = true, &$raw_frame = '', &$is_fin = 
     $length  = $ismask_length  & 0x7F;
     $is_mask = $ismask_length  >> 7;
     
-    // Ïîëó÷àåì äîïîëíèòåëüíûå áàéòû äëèíû, åñëè îíè äîëæíû áûòü ( $length > 125 )
-    // È çàìåíÿåì çíà÷åíèå $length
+    // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ Ð´Ð¾Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ðµ Ð±Ð°Ð¹Ñ‚Ñ‹ Ð´Ð»Ð¸Ð½Ñ‹, ÐµÑÐ»Ð¸ Ð¾Ð½Ð¸ Ð´Ð¾Ð»Ð¶Ð½Ñ‹ Ð±Ñ‹Ñ‚ÑŒ ( $length > 125 )
+    // Ð˜ Ð·Ð°Ð¼ÐµÐ½ÑÐµÐ¼ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ $length
     $lenstr = '';
     if($length == 126) 
     {
@@ -38,7 +38,7 @@ function receive_ws_frame($stream, $decode = true, &$raw_frame = '', &$is_fin = 
     {
         $lenstr = stream_read($stream, 8, $timeout);;
         extract(unpack('Nlength_big/Nlength', $lenstr), EXTR_OVERWRITE);
-        // Åñëè php 64-ðàçðÿäíûé, òî îáðåòàåì âîçìîæíîñòü ïåðåäàâàòü ýêñàáàéòû äàííûõ 
+        // Ð•ÑÐ»Ð¸ php 64-Ñ€Ð°Ð·Ñ€ÑÐ´Ð½Ñ‹Ð¹, Ñ‚Ð¾ Ð¾Ð±Ñ€ÐµÑ‚Ð°ÐµÐ¼ Ð²Ð¾Ð·Ð¼Ð¾Ð¶Ð½Ð¾ÑÑ‚ÑŒ Ð¿ÐµÑ€ÐµÐ´Ð°Ð²Ð°Ñ‚ÑŒ ÑÐºÑÐ°Ð±Ð°Ð¹Ñ‚Ñ‹ Ð´Ð°Ð½Ð½Ñ‹Ñ… 
         if ($length_big && PHP_INT_MAX > 2147483647) {
             $length = $length_big << 32 + $length;
         }
