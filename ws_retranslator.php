@@ -1,8 +1,8 @@
 <?php
-$host = 'localhost'; //host
+$host    = 'localhost';
 $bind_ip = '0.0.0.0';
-$port = '8000'; //port
-$null = NULL; //null var
+$port    = '8000';
+$null    = NULL;
 date_default_timezone_set('Europe/Moscow');
 require (__DIR__.DIRECTORY_SEPARATOR.'http_lib.php');
 require (__DIR__.DIRECTORY_SEPARATOR.'ws_lib.php');
@@ -18,7 +18,7 @@ $status_display = 1;
 $clients   = array($stream);
 $receivers = array();
 $senders   = array();
-$secure_only = 1;
+$secure_only  = 1;
 $require_auth = 0;
 
 // start endless loop, so that our script doesn't stop
@@ -56,8 +56,7 @@ while (true) {
             $clients[] = $stream_new; //add socket to client array
             stream_set_blocking ($stream_new, false);
             $ip = stream_socket_get_name( $stream_new, true);
-            $response = mask(json_encode(array('type'=>'system', 'message'=>$ip.' connected'))); //prepare json data
-            send_message($response); //notify all receivers about new connection
+            send_message(array('type'=>'system', 'message'=>$ip.' connected')); //notify all receivers about new connection
         }
         //make room for new socket
         unset($changed[$i]);
@@ -79,7 +78,7 @@ while (true) {
         $tst_msg = json_decode($received_text, true);
         if (is_null($tst_msg)) {
             // TODO - добавить определение закрытия соединения клиентом  http://learn.javascript.ru/websockets#%D1%87%D0%B8%D1%81%D1%82%D0%BE%D0%B5-%D0%B7%D0%B0%D0%BA%D1%80%D1%8B%D1%82%D0%B8%D0%B5
-            if ($raw) echo "Unknown message ".bin2hex($received_text)." got, closing connection \n";
+            if ($raw) echo "Unknown message $received_text ".bin2hex($received_text)." got, closing connection \n";
             drop_client($changed_stream);
             unset($changed[$i]);
             continue(1);
@@ -96,7 +95,7 @@ while (true) {
         
         //prepare data to be sent to client
         $tst_msg['type'] = 'usermsg';
-        send_message(mask(json_encode($tst_msg))); //send data
+        send_message($tst_msg); //send data
         
         if (!$raw) { // check disconnected client
             drop_client($changed_stream);
@@ -105,6 +104,7 @@ while (true) {
 }
 
 function perform_auth($msg_arr, $stream) {
+    if (empty($msg_arr['message'])) return false;
     global $clients;
     global $receivers;
     global $senders;  
@@ -114,12 +114,14 @@ function perform_auth($msg_arr, $stream) {
     
     if ($msg_arr['message'] == 'receiver') 
     {
-        $receivers[$found_key] = 1;
+        return $receivers[$found_key] = array_merge(empty($receivers[$found_key]) ? array() : $receivers[$found_key], $msg_arr);
     } 
     elseif ($msg_arr['message'] == 'sender') 
     {
-        $senders[$found_key] = 1;
+        return $senders[$found_key] = array_merge(empty($senders[$found_key]) ? array() : $senders[$found_key], $msg_arr);
     }
+    
+    return false;
         
 }
 
@@ -141,12 +143,11 @@ function drop_client($changed_stream, $no_notify = false)
     if (empty($clients)) $clients = array($main_stream);
     
     //notify all users about disconnected connection
-    $response = mask(json_encode(array('type'=>'system', 'message'=>$ip.' disconnected')));
-    $no_notify || send_message($response);
+    $no_notify || send_message(array('type'=>'system', 'message'=>$ip.' disconnected'));
 }
 
 
-function send_message($msg, $stream = null)
+function send_message($msg_arr, $stream = null)
 {
     global $receivers;
     global $require_auth;
@@ -161,8 +162,10 @@ function send_message($msg, $stream = null)
     
     foreach($clients as $i => $changed_stream)
     {
+        
         if (!$stream && $require_auth && empty($receivers[$i])) continue;
-        stream_write ($changed_stream, $msg);
+        
+        transmit_ws_frame ($changed_stream, json_encode($msg_arr));
     }
     return true;
 }
@@ -175,3 +178,4 @@ function no_sec_key_response() {
            "Content-Length: ".strlen($html)."\r\n" .
            "\r\n".$html;
 }
+
