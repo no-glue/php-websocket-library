@@ -1,7 +1,11 @@
 <?php
 
 function receive_http_head($stream) {
-    
+    if (!is_resource($stream))
+    {    
+        trigger_error('Invalid resource given', E_USER_WARNING);
+        return false;
+    }
     $expire = time() + 2;  // hardcoded timeout
     stream_set_timeout($stream, 1);
     $header = "";
@@ -10,6 +14,7 @@ function receive_http_head($stream) {
     {
         $header .= fgets($stream, 8192);
     }
+    if (time() >= $expire) trigger_error('Timeout');
     if (!strpos($header, "\r\n")) {
         trigger_error( ' got '.$header."\n" );
         return false;
